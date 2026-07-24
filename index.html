@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur de coefficients horaires</title>
+<style>
+  :root {
+    --ink: #1f2420;
+    --ink-soft: #5b6157;
+    --paper: #f6f4ee;
+    --card: #ffffff;
+    --line: #dcd8ca;
+    --accent: #2f5d4f;
+    --accent-soft: #e4ede9;
+    --danger: #a4442f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    padding: 2.5rem 1.25rem 4rem;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 0.25rem; letter-spacing: -0.01em; }
+  .sub { color: var(--ink-soft); font-size: 0.9rem; margin: 0 0 2rem; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .card h2 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    margin: 0 0 1rem;
+    font-weight: 600;
+  }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .field { display: flex; flex-direction: column; gap: 0.35rem; }
+  .field label { font-size: 0.82rem; color: var(--ink-soft); }
+  .field input[type="time"], .field input[type="text"] {
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    width: 100%;
+  }
+  .pause-row { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .totals {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 1rem;
+    margin-top: 1rem;
+    border-top: 1px solid var(--line);
+  }
+  .totals .label { color: var(--ink-soft); font-size: 0.9rem; }
+  .totals .value { font-size: 1.6rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .totals .hours { font-size: 0.85rem; color: var(--ink-soft); margin-left: 0.5rem; }
+  .add-btn {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: none;
+    border-radius: 6px;
+    padding: 0.6rem 1.1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 1rem;
+  }
+  .add-btn:hover { filter: brightness(0.96); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 0.5rem 0.4rem; border-bottom: 1px solid var(--line); }
+  th { color: var(--ink-soft); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tfoot td { font-weight: 700; border-bottom: none; border-top: 2px solid var(--ink); }
+  .del { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1rem; padding: 0 0.3rem; }
+  .export { display: flex; gap: 0.5rem; margin-top: 1rem; }
+  .export button {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: none;
+    border-radius: 6px;
+    padding: 0.55rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .hint { font-size: 0.8rem; color: var(--ink-soft); margin-top: 0.5rem; }
+  .empty { color: var(--ink-soft); font-size: 0.85rem; padding: 0.5rem 0; }
+  @media (max-width: 480px) {
+    .field-grid, .pause-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Générateur de coefficients horaires</h1>
+  <p class="sub">Indique le début et la fin de ta journée, la pause déjeuner, et récupère le coefficient à reporter sur ta fiche intérim.</p>
+
+  <div class="card">
+    <h2>Journée</h2>
+    <div class="field-grid">
+      <div class="field">
+        <label for="label">Intitulé (optionnel)</label>
+        <input type="text" id="label" placeholder="ex: Lundi, Chantier A...">
+      </div>
+      <div class="field">
+        <label for="start">Début de journée</label>
+        <input type="time" id="start" value="07:30">
+      </div>
+      <div class="pause-row">
+        <div class="field">
+          <label for="pauseStart">Début pause déjeuner</label>
+          <input type="time" id="pauseStart" value="12:00">
+        </div>
+        <div class="field">
+          <label for="pauseEnd">Fin pause déjeuner</label>
+          <input type="time" id="pauseEnd" value="13:00">
+        </div>
+      </div>
+      <div class="field">
+        <label for="end">Fin de journée</label>
+        <input type="time" id="end" value="17:00">
+      </div>
+    </div>
+
+    <div class="totals">
+      <div>
+        <span class="label">Temps travaillé</span>
+        <span class="hours" id="totalHours">—</span>
+      </div>
+      <div class="value" id="totalCoef">—</div>
+    </div>
+
+    <button class="add-btn" onclick="addToReport()">+ Ajouter au tableau</button>
+    <p class="hint" id="warning"></p>
+  </div>
+
+  <div class="card">
+    <h2>Tableau à reporter</h2>
+    <table>
+      <thead>
+        <tr><th>Journée</th><th class="num">Horaires</th><th class="num">Pause</th><th class="num">Durée</th><th class="num">Coefficient</th><th></th></tr>
+      </thead>
+      <tbody id="reportBody">
+        <tr><td colspan="6" class="empty">Aucune journée ajoutée pour l'instant.</td></tr>
+      </tbody>
+      <tfoot>
+        <tr><td colspan="3">Total</td><td class="num" id="reportTotalHours">0h00</td><td class="num" id="reportTotalCoef">0,00</td><td></td></tr>
+      </tfoot>
+    </table>
+    <div class="export">
+      <button onclick="copyTable()">Copier le tableau</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let entries = [];
+
+function toMinutes(t) {
+  if (!t) return null;
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function fmtHM(mins) {
+  const h = Math.floor(mins / 60);
+  const m = Math.round(mins % 60);
+  return `${h}h${String(m).padStart(2,'0')}`;
+}
+
+function fmtCoef(mins) {
+  return (mins / 60).toFixed(2).replace('.', ',');
+}
+
+function computeWorked() {
+  const start = toMinutes(document.getElementById('start').value);
+  const end = toMinutes(document.getElementById('end').value);
+  const pStart = toMinutes(document.getElementById('pauseStart').value);
+  const pEnd = toMinutes(document.getElementById('pauseEnd').value);
+  const warning = document.getElementById('warning');
+  warning.textContent = '';
+
+  if (start === null || end === null) return null;
+  if (end <= start) { warning.textContent = "L'heure de fin doit être après l'heure de début."; return null; }
+
+  let pause = 0;
+  if (pStart !== null && pEnd !== null && pEnd > pStart) {
+    pause = pEnd - pStart;
+  }
+
+  const worked = (end - start) - pause;
+  if (worked < 0) { warning.textContent = "La pause dépasse la durée de la journée."; return null; }
+  return { start, end, pStart, pEnd, pause, worked };
+}
+
+function updateLive() {
+  const r = computeWorked();
+  document.getElementById('totalHours').textContent = r ? fmtHM(r.worked) : '—';
+  document.getElementById('totalCoef').textContent = r ? fmtCoef(r.worked) : '—';
+}
+
+['start','end','pauseStart','pauseEnd'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateLive);
+});
+
+function addToReport() {
+  const r = computeWorked();
+  if (!r) return;
+  const label = document.getElementById('label').value || `Journée ${entries.length + 1}`;
+  entries.push({ label, ...r });
+  renderReport();
+}
+
+function removeEntry(i) {
+  entries.splice(i, 1);
+  renderReport();
+}
+
+function minToTime(m) {
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+}
+
+function renderReport() {
+  const body = document.getElementById('reportBody');
+  body.innerHTML = '';
+  if (entries.length === 0) {
+    body.innerHTML = '<tr><td colspan="6" class="empty">Aucune journée ajoutée pour l\\'instant.</td></tr>';
+  } else {
+    entries.forEach((e, i) => {
+      const tr = document.createElement('tr');
+      const pauseText = e.pause > 0 ? fmtHM(e.pause) : '—';
+      tr.innerHTML = `
+        <td>${e.label}</td>
+        <td class="num">${minToTime(e.start)}–${minToTime(e.end)}</td>
+        <td class="num">${pauseText}</td>
+        <td class="num">${fmtHM(e.worked)}</td>
+        <td class="num">${fmtCoef(e.worked)}</td>
+        <td><button class="del" onclick="removeEntry(${i})" title="Supprimer">✕</button></td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+  const totalMins = entries.reduce((s, e) => s + e.worked, 0);
+  document.getElementById('reportTotalHours').textContent = fmtHM(totalMins);
+  document.getElementById('reportTotalCoef').textContent = fmtCoef(totalMins);
+}
+
+function copyTable() {
+  let text = "Journée\tHoraires\tPause\tDurée\tCoefficient\n";
+  entries.forEach(e => {
+    const pauseText = e.pause > 0 ? fmtHM(e.pause) : '—';
+    text += `${e.label}\t${minToTime(e.start)}–${minToTime(e.end)}\t${pauseText}\t${fmtHM(e.worked)}\t${fmtCoef(e.worked)}\n`;
+  });
+  const totalMins = entries.reduce((s, e) => s + e.worked, 0);
+  text += `Total\t\t\t${fmtHM(totalMins)}\t${fmtCoef(totalMins)}`;
+  navigator.clipboard.writeText(text).then(() => alert('Tableau copié — colle-le directement dans ta fiche.'));
+}
+
+updateLive();
+</script>
+</body>
+</html>
