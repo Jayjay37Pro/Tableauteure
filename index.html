@@ -158,27 +158,35 @@
         </div>
       </div>
     </div>
+    <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; color:var(--ink-soft); margin-top:0.9rem; cursor:pointer;">
+      <input type="checkbox" id="taskOvertime" style="width:auto;">
+      Heure supplémentaire (s'ajoute au total en plus de la tranche horaire)
+    </label>
     <button class="add-btn" onclick="addTaskToReport()">+ Ajouter au tableau</button>
-    <p class="hint">Coefficient calculé sur la durée seule, sans horaires ni pause.</p>
+    <p class="hint">Décoché : la tâche est déjà comprise dans la tranche horaire de travail et n'est pas recomptée. Coché : elle s'ajoute en plus, en heure supplémentaire.</p>
   </div>
 
   <div class="card">
     <h2>Tableau à reporter</h2>
     <table>
       <thead>
-        <tr><th>Journée</th><th class="num">Horaires</th><th class="num">Pause</th><th class="num">Durée</th><th class="num">Coefficient</th><th></th></tr>
+        <tr><th>Journée</th><th class="num">Horaires</th><th class="num">Pause</th><th class="num">Durée</th><th class="num">H. sup.</th><th class="num">Coefficient</th><th></th></tr>
       </thead>
       <tbody id="reportBody">
-        <tr><td colspan="6" class="empty">Aucune journée ajoutée pour l'instant.</td></tr>
+        <tr><td colspan="7" class="empty">Aucune journée ajoutée pour le moment.</td></tr>
       </tbody>
       <tfoot>
-        <tr><td colspan="3">Total</td><td class="num" id="reportTotalHours">0h00</td><td class="num" id="reportTotalCoef">0,00</td><td></td></tr>
+        <tr><td colspan="3">Total</td><td class="num" id="reportTotalHours">0h00</td><td></td><td class="num" id="reportTotalCoef">0,00</td><td></td></tr>
       </tfoot>
     </table>
     <div class="export">
       <button onclick="copyTable()">Copier le tableau</button>
     </div>
   </div>
+
+  <footer style="text-align:center; font-size:0.78rem; color:var(--ink-soft); margin-top:2rem; padding-top:1.25rem; border-top:1px solid var(--line);">
+    Développé par Jean-Jacques BAL
+  </footer>
 </div>
 
 <script>
@@ -235,7 +243,7 @@ function addToReport() {
   const r = computeWorked();
   if (!r) return;
   const label = document.getElementById('label').value || `Journée ${entries.length + 1}`;
-  entries.push({ label, ...r });
+  entries.push({ label, ...r, isTask: false, overtime: true });
   renderReport();
 }
 
@@ -245,8 +253,15 @@ function addTaskToReport() {
   const worked = h * 60 + m;
   if (worked <= 0) return;
   const label = document.getElementById('taskLabel').value || `Tâche ${entries.length + 1}`;
-  entries.push({ label, start: null, end: null, pause: 0, worked });
+  const overtime = document.getElementById('taskOvertime').checked;
+  entries.push({ label, start: null, end: null, pause: 0, worked, isTask: true, overtime });
   document.getElementById('taskLabel').value = '';
+  document.getElementById('taskOvertime').checked = false;
+  renderReport();
+}
+
+function toggleOvertime(i, checked) {
+  entries[i].overtime = checked;
   renderReport();
 }
 
@@ -265,37 +280,42 @@ function renderReport() {
   const body = document.getElementById('reportBody');
   body.innerHTML = '';
   if (entries.length === 0) {
-    body.innerHTML = '<tr><td colspan="6" class="empty">Aucune journée ajoutée pour le moment.</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="empty">Aucune journée ajoutée pour le moment.</td></tr>';
   } else {
     entries.forEach((e, i) => {
       const tr = document.createElement('tr');
       const pauseText = e.pause > 0 ? fmtHM(e.pause) : '—';
       const horaireText = e.start !== null ? `${minToTime(e.start)}–${minToTime(e.end)}` : '—';
+      const overtimeCell = e.isTask
+        ? `<input type="checkbox" ${e.overtime ? 'checked' : ''} onchange="toggleOvertime(${i}, this.checked)">`
+        : '—';
       tr.innerHTML = `
         <td>${e.label}</td>
         <td class="num">${horaireText}</td>
         <td class="num">${pauseText}</td>
         <td class="num">${fmtHM(e.worked)}</td>
+        <td class="num">${overtimeCell}</td>
         <td class="num">${fmtCoef(e.worked)}</td>
         <td><button class="del" onclick="removeEntry(${i})" title="Supprimer">✕</button></td>
       `;
       body.appendChild(tr);
     });
   }
-  const totalMins = entries.reduce((s, e) => s + e.worked, 0);
+  const totalMins = entries.reduce((s, e) => s + (e.isTask && !e.overtime ? 0 : e.worked), 0);
   document.getElementById('reportTotalHours').textContent = fmtHM(totalMins);
   document.getElementById('reportTotalCoef').textContent = fmtCoef(totalMins);
 }
 
 function copyTable() {
-  let text = "Journée\tHoraires\tPause\tDurée\tCoefficient\n";
+  let text = "Journée\tHoraires\tPause\tDurée\tH. sup.\tCoefficient\n";
   entries.forEach(e => {
     const pauseText = e.pause > 0 ? fmtHM(e.pause) : '—';
     const horaireText = e.start !== null ? `${minToTime(e.start)}–${minToTime(e.end)}` : '—';
-    text += `${e.label}\t${horaireText}\t${pauseText}\t${fmtHM(e.worked)}\t${fmtCoef(e.worked)}\n`;
+    const overtimeText = e.isTask ? (e.overtime ? 'Oui' : 'Non') : '—';
+    text += `${e.label}\t${horaireText}\t${pauseText}\t${fmtHM(e.worked)}\t${overtimeText}\t${fmtCoef(e.worked)}\n`;
   });
-  const totalMins = entries.reduce((s, e) => s + e.worked, 0);
-  text += `Total\t\t\t${fmtHM(totalMins)}\t${fmtCoef(totalMins)}`;
+  const totalMins = entries.reduce((s, e) => s + (e.isTask && !e.overtime ? 0 : e.worked), 0);
+  text += `Total\t\t\t${fmtHM(totalMins)}\t\t${fmtCoef(totalMins)}`;
   navigator.clipboard.writeText(text).then(() => alert('Tableau copié — colle-le directement dans ta fiche.'));
 }
 
