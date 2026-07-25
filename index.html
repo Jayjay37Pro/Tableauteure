@@ -185,6 +185,7 @@
     </table>
     <div class="export">
       <button onclick="copyTable()">Copier le tableau</button>
+      <button onclick="clearReport()" style="background:none; border:1px solid var(--danger); color:var(--danger);">Vider le tableau</button>
     </div>
   </div>
 
@@ -321,6 +322,14 @@ function renderReport() {
   const totalMins = entries.reduce((s, e) => s + (e.isTask && !e.overtime ? 0 : e.worked), 0);
   document.getElementById('reportTotalHours').textContent = fmtHM(totalMins);
   document.getElementById('reportTotalCoef').textContent = fmtCoef(totalMins);
+}
+
+function clearReport() {
+  if (entries.length === 0) return;
+  if (confirm('Vider tout le tableau ? Cette action est irréversible.')) {
+    entries = [];
+    renderReport();
+  }
 }
 
 function copyTable() {
