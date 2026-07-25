@@ -144,6 +144,25 @@
   </div>
 
   <div class="card">
+    <h2>Ajouter une tâche (durée directe)</h2>
+    <div class="field-grid">
+      <div class="field">
+        <label for="taskLabel">Nom de la tâche</label>
+        <input type="text" id="taskLabel" placeholder="ex: Ménage, Entretien véhicule...">
+      </div>
+      <div class="field">
+        <label>Durée</label>
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+          <input type="number" id="taskH" min="0" max="24" value="0" style="width:4rem; padding:0.5rem 0.6rem; border:1px solid var(--line); border-radius:6px; text-align:center;"> h
+          <input type="number" id="taskM" min="0" max="59" value="20" style="width:4rem; padding:0.5rem 0.6rem; border:1px solid var(--line); border-radius:6px; text-align:center;"> min
+        </div>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addTaskToReport()">+ Ajouter au tableau</button>
+    <p class="hint">Coefficient calculé sur la durée seule, sans horaires ni pause.</p>
+  </div>
+
+  <div class="card">
     <h2>Tableau à reporter</h2>
     <table>
       <thead>
@@ -220,6 +239,17 @@ function addToReport() {
   renderReport();
 }
 
+function addTaskToReport() {
+  const h = parseFloat(document.getElementById('taskH').value) || 0;
+  const m = parseFloat(document.getElementById('taskM').value) || 0;
+  const worked = h * 60 + m;
+  if (worked <= 0) return;
+  const label = document.getElementById('taskLabel').value || `Tâche ${entries.length + 1}`;
+  entries.push({ label, start: null, end: null, pause: 0, worked });
+  document.getElementById('taskLabel').value = '';
+  renderReport();
+}
+
 function removeEntry(i) {
   entries.splice(i, 1);
   renderReport();
@@ -235,14 +265,15 @@ function renderReport() {
   const body = document.getElementById('reportBody');
   body.innerHTML = '';
   if (entries.length === 0) {
-    body.innerHTML = '<tr><td colspan="6" class="empty">Aucune journée ajoutée pour l\\'instant.</td></tr>';
+    body.innerHTML = '<tr><td colspan="6" class="empty">Aucune journée ajoutée pour le moment.</td></tr>';
   } else {
     entries.forEach((e, i) => {
       const tr = document.createElement('tr');
       const pauseText = e.pause > 0 ? fmtHM(e.pause) : '—';
+      const horaireText = e.start !== null ? `${minToTime(e.start)}–${minToTime(e.end)}` : '—';
       tr.innerHTML = `
         <td>${e.label}</td>
-        <td class="num">${minToTime(e.start)}–${minToTime(e.end)}</td>
+        <td class="num">${horaireText}</td>
         <td class="num">${pauseText}</td>
         <td class="num">${fmtHM(e.worked)}</td>
         <td class="num">${fmtCoef(e.worked)}</td>
@@ -260,7 +291,8 @@ function copyTable() {
   let text = "Journée\tHoraires\tPause\tDurée\tCoefficient\n";
   entries.forEach(e => {
     const pauseText = e.pause > 0 ? fmtHM(e.pause) : '—';
-    text += `${e.label}\t${minToTime(e.start)}–${minToTime(e.end)}\t${pauseText}\t${fmtHM(e.worked)}\t${fmtCoef(e.worked)}\n`;
+    const horaireText = e.start !== null ? `${minToTime(e.start)}–${minToTime(e.end)}` : '—';
+    text += `${e.label}\t${horaireText}\t${pauseText}\t${fmtHM(e.worked)}\t${fmtCoef(e.worked)}\n`;
   });
   const totalMins = entries.reduce((s, e) => s + e.worked, 0);
   text += `Total\t\t\t${fmtHM(totalMins)}\t${fmtCoef(totalMins)}`;
