@@ -81,7 +81,7 @@
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   tfoot td { font-weight: 700; border-bottom: none; border-top: 2px solid var(--ink); }
   .del { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1rem; padding: 0 0.3rem; }
-  .export { display: flex; gap: 0.5rem; margin-top: 1rem; }
+  .export { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
   .export button {
     background: var(--accent-soft);
     color: var(--accent);
@@ -96,6 +96,39 @@
   .empty { color: var(--ink-soft); font-size: 0.85rem; padding: 0.5rem 0; }
   @media (max-width: 480px) {
     .field-grid, .pause-row { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .responsive-table thead { display: none; }
+    .responsive-table, .responsive-table tbody, .responsive-table tfoot,
+    .responsive-table tr, .responsive-table td { display: block; width: 100%; }
+    .responsive-table tr {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .responsive-table tfoot tr { background: var(--accent-soft); border-color: var(--accent); }
+    .responsive-table td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--line);
+      text-align: right;
+    }
+    .responsive-table td:last-child { border-bottom: none; }
+    .responsive-table td[data-label]:not([data-label=""])::before {
+      content: attr(data-label);
+      font-size: 0.78rem;
+      color: var(--ink-soft);
+      text-align: left;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .responsive-table td.empty { display: block; text-align: center; }
+    .responsive-table td:empty { display: none; }
   }
 </style>
 </head>
@@ -172,7 +205,7 @@
 
   <div class="card">
     <h2>Tableau à reporter</h2>
-    <table>
+    <table class="responsive-table" id="reportTable">
       <thead>
         <tr><th>Journée</th><th class="num">Horaires</th><th class="num">Pause</th><th class="num">Durée</th><th class="num">H. sup.</th><th class="num">Coefficient</th><th></th></tr>
       </thead>
@@ -180,7 +213,7 @@
         <tr><td colspan="7" class="empty">Aucune journée ajoutée pour le moment.</td></tr>
       </tbody>
       <tfoot>
-        <tr><td colspan="3">Total</td><td class="num" id="reportTotalHours">0h00</td><td></td><td class="num" id="reportTotalCoef">0,00</td><td></td></tr>
+        <tr><td data-label="">Total</td><td class="num" data-label="Horaires"></td><td class="num" data-label="Pause"></td><td class="num" data-label="Durée" id="reportTotalHours">0h00</td><td data-label="H. sup."></td><td class="num" data-label="Coefficient" id="reportTotalCoef">0,00</td><td></td></tr>
       </tfoot>
     </table>
     <div class="export">
@@ -298,7 +331,7 @@ function renderReport() {
   const body = document.getElementById('reportBody');
   body.innerHTML = '';
   if (entries.length === 0) {
-    body.innerHTML = '<tr><td colspan="7" class="empty">Aucune journée ajoutée pour le moment.</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="empty" data-label="">Aucune journée ajoutée pour le moment.</td></tr>';
   } else {
     entries.forEach((e, i) => {
       const tr = document.createElement('tr');
@@ -308,13 +341,13 @@ function renderReport() {
         ? `<input type="checkbox" ${e.overtime ? 'checked' : ''} onchange="toggleOvertime(${i}, this.checked)">`
         : '-';
       tr.innerHTML = `
-        <td>${e.label}</td>
-        <td class="num">${horaireText}</td>
-        <td class="num">${pauseText}</td>
-        <td class="num">${fmtHM(e.worked)}</td>
-        <td class="num">${overtimeCell}</td>
-        <td class="num">${fmtCoef(e.worked)}</td>
-        <td><button class="del" onclick="removeEntry(${i})" title="Supprimer">✕</button></td>
+        <td data-label="Journée">${e.label}</td>
+        <td class="num" data-label="Horaires">${horaireText}</td>
+        <td class="num" data-label="Pause">${pauseText}</td>
+        <td class="num" data-label="Durée">${fmtHM(e.worked)}</td>
+        <td class="num" data-label="H. sup.">${overtimeCell}</td>
+        <td class="num" data-label="Coefficient">${fmtCoef(e.worked)}</td>
+        <td data-label=""><button class="del" onclick="removeEntry(${i})" title="Supprimer">✕</button></td>
       `;
       body.appendChild(tr);
     });
