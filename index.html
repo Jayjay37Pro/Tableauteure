@@ -134,9 +134,9 @@
     <div class="totals">
       <div>
         <span class="label">Temps travaillé</span>
-        <span class="hours" id="totalHours">—</span>
+        <span class="hours" id="totalHours">-</span>
       </div>
-      <div class="value" id="totalCoef">—</div>
+      <div class="value" id="totalCoef">-</div>
     </div>
 
     <button class="add-btn" onclick="addToReport()">+ Ajouter au tableau</button>
@@ -185,7 +185,10 @@
   </div>
 
   <footer style="text-align:center; font-size:0.78rem; color:var(--ink-soft); margin-top:2rem; padding-top:1.25rem; border-top:1px solid var(--line);">
-    Développé par Jean-Jacques BAL
+    Développé par <a href="https://www.linkedin.com/in/jean-jacques-bal/" target="_blank" rel="noopener noreferrer" style="color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent);">Jean-Jacques BAL</a>
+    <p style="max-width:480px; margin:0.6rem auto 0; line-height:1.5;">
+      Cette page HTML fonctionne entièrement dans votre navigateur : aucune donnée saisie n'est collectée, transmise, stockée ou partagée avec un tiers ou un serveur distant. Elle est fournie à titre purement informatif et sert uniquement au calcul indicatif de coefficients horaires. Elle ne constitue pas un document officiel et n'engage pas la responsabilité de son auteur quant à l'usage qui en est fait.
+    </p>
   </footer>
 </div>
 
@@ -231,8 +234,8 @@ function computeWorked() {
 
 function updateLive() {
   const r = computeWorked();
-  document.getElementById('totalHours').textContent = r ? fmtHM(r.worked) : '—';
-  document.getElementById('totalCoef').textContent = r ? fmtCoef(r.worked) : '—';
+  document.getElementById('totalHours').textContent = r ? fmtHM(r.worked) : '-';
+  document.getElementById('totalCoef').textContent = r ? fmtCoef(r.worked) : '-';
 }
 
 ['start','end','pauseStart','pauseEnd'].forEach(id => {
@@ -284,11 +287,11 @@ function renderReport() {
   } else {
     entries.forEach((e, i) => {
       const tr = document.createElement('tr');
-      const pauseText = e.pause > 0 ? fmtHM(e.pause) : '—';
-      const horaireText = e.start !== null ? `${minToTime(e.start)}–${minToTime(e.end)}` : '—';
+      const pauseText = e.pause > 0 ? fmtHM(e.pause) : '-';
+      const horaireText = e.start !== null ? `${minToTime(e.start)}–${minToTime(e.end)}` : '-';
       const overtimeCell = e.isTask
         ? `<input type="checkbox" ${e.overtime ? 'checked' : ''} onchange="toggleOvertime(${i}, this.checked)">`
-        : '—';
+        : '-';
       tr.innerHTML = `
         <td>${e.label}</td>
         <td class="num">${horaireText}</td>
@@ -309,14 +312,14 @@ function renderReport() {
 function copyTable() {
   let text = "Journée\tHoraires\tPause\tDurée\tH. sup.\tCoefficient\n";
   entries.forEach(e => {
-    const pauseText = e.pause > 0 ? fmtHM(e.pause) : '—';
-    const horaireText = e.start !== null ? `${minToTime(e.start)}–${minToTime(e.end)}` : '—';
-    const overtimeText = e.isTask ? (e.overtime ? 'Oui' : 'Non') : '—';
+    const pauseText = e.pause > 0 ? fmtHM(e.pause) : '-';
+    const horaireText = e.start !== null ? `${minToTime(e.start)}–${minToTime(e.end)}` : '-';
+    const overtimeText = e.isTask ? (e.overtime ? 'Oui' : 'Non') : '-';
     text += `${e.label}\t${horaireText}\t${pauseText}\t${fmtHM(e.worked)}\t${overtimeText}\t${fmtCoef(e.worked)}\n`;
   });
   const totalMins = entries.reduce((s, e) => s + (e.isTask && !e.overtime ? 0 : e.worked), 0);
   text += `Total\t\t\t${fmtHM(totalMins)}\t\t${fmtCoef(totalMins)}`;
-  navigator.clipboard.writeText(text).then(() => alert('Tableau copié — colle-le directement dans ta fiche.'));
+  navigator.clipboard.writeText(text).then(() => alert('Tableau copié - colle-le directement dans ta fiche.'));
 }
 
 updateLive();
