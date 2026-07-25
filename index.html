@@ -116,6 +116,10 @@
         <input type="time" id="start" value="07:30">
       </div>
       <div class="pause-row">
+        <label style="grid-column:1 / -1; display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; color:var(--ink-soft); cursor:pointer; margin-bottom:0.25rem;">
+          <input type="checkbox" id="noPause" style="width:auto;" onchange="togglePause()">
+          Journée sans pause déjeuner (ex: vendredi 7h30-12h30)
+        </label>
         <div class="field">
           <label for="pauseStart">Début pause déjeuner</label>
           <input type="time" id="pauseStart" value="12:00">
@@ -214,8 +218,9 @@ function fmtCoef(mins) {
 function computeWorked() {
   const start = toMinutes(document.getElementById('start').value);
   const end = toMinutes(document.getElementById('end').value);
-  const pStart = toMinutes(document.getElementById('pauseStart').value);
-  const pEnd = toMinutes(document.getElementById('pauseEnd').value);
+  const noPause = document.getElementById('noPause').checked;
+  const pStart = noPause ? null : toMinutes(document.getElementById('pauseStart').value);
+  const pEnd = noPause ? null : toMinutes(document.getElementById('pauseEnd').value);
   const warning = document.getElementById('warning');
   warning.textContent = '';
 
@@ -236,6 +241,15 @@ function updateLive() {
   const r = computeWorked();
   document.getElementById('totalHours').textContent = r ? fmtHM(r.worked) : '-';
   document.getElementById('totalCoef').textContent = r ? fmtCoef(r.worked) : '-';
+}
+
+function togglePause() {
+  const noPause = document.getElementById('noPause').checked;
+  document.getElementById('pauseStart').disabled = noPause;
+  document.getElementById('pauseEnd').disabled = noPause;
+  document.getElementById('pauseStart').style.opacity = noPause ? 0.4 : 1;
+  document.getElementById('pauseEnd').style.opacity = noPause ? 0.4 : 1;
+  updateLive();
 }
 
 ['start','end','pauseStart','pauseEnd'].forEach(id => {
