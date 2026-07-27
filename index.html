@@ -401,7 +401,7 @@ function renderReport() {
       body.appendChild(tr);
     });
   }
-  const totalMins = entries.reduce((s, e) => s + (e.isTask && !e.overtime ? 0 : e.worked), 0);
+  const totalMins = entries.reduce((s, e) => s + e.worked, 0);
   document.getElementById('reportTotalHours').textContent = fmtHM(totalMins);
   document.getElementById('reportTotalCoef').textContent = fmtCoef(totalMins);
 }
@@ -422,7 +422,7 @@ function copyTable() {
     const overtimeText = e.isTask ? (e.overtime ? 'Oui' : 'Non') : '-';
     text += `${e.label}\t${horaireText}\t${pauseText}\t${fmtHM(e.worked)}\t${overtimeText}\t${fmtCoef(e.worked)}\n`;
   });
-  const totalMins = entries.reduce((s, e) => s + (e.isTask && !e.overtime ? 0 : e.worked), 0);
+  const totalMins = entries.reduce((s, e) => s + e.worked, 0);
   text += `Total\t\t\t${fmtHM(totalMins)}\t\t${fmtCoef(totalMins)}`;
   navigator.clipboard.writeText(text).then(() => alert('Tableau copié - colle-le directement dans ta fiche.'));
 }
