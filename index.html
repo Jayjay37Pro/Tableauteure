@@ -207,13 +207,13 @@
     <h2>Tableau à reporter</h2>
     <table class="responsive-table" id="reportTable">
       <thead>
-        <tr><th>Journée</th><th class="num">Horaires</th><th class="num">Pause</th><th class="num">Durée</th><th class="num">H. sup.</th><th class="num">Coefficient</th><th></th></tr>
+        <tr><th>Journée</th><th class="num">Horaires</th><th class="num">Pause</th><th class="num">Durée</th><th class="num">H. sup.</th><th class="num">Coefficient</th><th class="num">Coeff. (1/4h)</th><th></th></tr>
       </thead>
       <tbody id="reportBody">
-        <tr><td colspan="7" class="empty">Aucune journée ajoutée pour le moment.</td></tr>
+        <tr><td colspan="8" class="empty">Aucune journée ajoutée pour le moment.</td></tr>
       </tbody>
       <tfoot>
-        <tr><td data-label="">Total</td><td class="num" data-label="Horaires"></td><td class="num" data-label="Pause"></td><td class="num" data-label="Durée" id="reportTotalHours">0h00</td><td data-label="H. sup."></td><td class="num" data-label="Coefficient" id="reportTotalCoef">0,00</td><td></td></tr>
+        <tr><td data-label="">Total</td><td class="num" data-label="Horaires"></td><td class="num" data-label="Pause"></td><td class="num" data-label="Durée" id="reportTotalHours">0h00</td><td data-label="H. sup."></td><td class="num" data-label="Coefficient" id="reportTotalCoef">0,00</td><td class="num" data-label="Coeff. (1/4h)" id="reportTotalCoefQuarter">0,00</td><td></td></tr>
       </tfoot>
     </table>
     <div class="export">
@@ -247,6 +247,10 @@ function fmtHM(mins) {
 
 function fmtCoef(mins) {
   return (mins / 60).toFixed(2).replace('.', ',');
+}
+
+function quarterRoundMins(mins) {
+  return Math.round(mins / 15) * 15;
 }
 
 function computeWorked() {
@@ -380,7 +384,7 @@ function renderReport() {
   const body = document.getElementById('reportBody');
   body.innerHTML = '';
   if (entries.length === 0) {
-    body.innerHTML = '<tr><td colspan="7" class="empty" data-label="">Aucune journée ajoutée pour le moment.</td></tr>';
+    body.innerHTML = '<tr><td colspan="8" class="empty" data-label="">Aucune journée ajoutée pour le moment.</td></tr>';
   } else {
     entries.forEach((e, i) => {
       const tr = document.createElement('tr');
@@ -396,6 +400,7 @@ function renderReport() {
         <td class="num" data-label="Durée">${fmtHM(e.worked)}</td>
         <td class="num" data-label="H. sup.">${overtimeCell}</td>
         <td class="num" data-label="Coefficient">${fmtCoef(e.worked)}</td>
+        <td class="num" data-label="Coeff. (1/4h)">${fmtCoef(quarterRoundMins(e.worked))}</td>
         <td data-label=""><button class="del" onclick="removeEntry(${i})" title="Supprimer">✕</button></td>
       `;
       body.appendChild(tr);
@@ -404,6 +409,8 @@ function renderReport() {
   const totalMins = entries.reduce((s, e) => s + e.worked, 0);
   document.getElementById('reportTotalHours').textContent = fmtHM(totalMins);
   document.getElementById('reportTotalCoef').textContent = fmtCoef(totalMins);
+  const totalQuarterMins = entries.reduce((s, e) => s + quarterRoundMins(e.worked), 0);
+  document.getElementById('reportTotalCoefQuarter').textContent = fmtCoef(totalQuarterMins);
 }
 
 function clearReport() {
@@ -415,15 +422,16 @@ function clearReport() {
 }
 
 function copyTable() {
-  let text = "Journée\tHoraires\tPause\tDurée\tH. sup.\tCoefficient\n";
+  let text = "Journée\tHoraires\tPause\tDurée\tH. sup.\tCoefficient\tCoeff. (1/4h)\n";
   entries.forEach(e => {
     const pauseText = e.pause > 0 ? fmtHM(e.pause) : '-';
     const horaireText = e.start !== null ? `${minToTime(e.start)}–${minToTime(e.end)}` : '-';
     const overtimeText = e.isTask ? (e.overtime ? 'Oui' : 'Non') : '-';
-    text += `${e.label}\t${horaireText}\t${pauseText}\t${fmtHM(e.worked)}\t${overtimeText}\t${fmtCoef(e.worked)}\n`;
+    text += `${e.label}\t${horaireText}\t${pauseText}\t${fmtHM(e.worked)}\t${overtimeText}\t${fmtCoef(e.worked)}\t${fmtCoef(quarterRoundMins(e.worked))}\n`;
   });
   const totalMins = entries.reduce((s, e) => s + e.worked, 0);
-  text += `Total\t\t\t${fmtHM(totalMins)}\t\t${fmtCoef(totalMins)}`;
+  const totalQuarterMins = entries.reduce((s, e) => s + quarterRoundMins(e.worked), 0);
+  text += `Total\t\t\t${fmtHM(totalMins)}\t\t${fmtCoef(totalMins)}\t${fmtCoef(totalQuarterMins)}`;
   navigator.clipboard.writeText(text).then(() => alert('Tableau copié - colle-le directement dans ta fiche.'));
 }
 
