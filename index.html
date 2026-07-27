@@ -200,7 +200,7 @@
       Heure supplémentaire (s'ajoute au total en plus de la tranche horaire)
     </label>
     <button class="add-btn" onclick="addTaskToReport()">+ Ajouter au tableau</button>
-    <p class="hint">Décoché : la tâche est déjà comprise dans la tranche horaire de travail et n'est pas recomptée. Coché : elle s'ajoute en plus, en heure supplémentaire.</p>
+    <p class="hint">Décoché : la durée est retranchée de la journée principale (temps pris sur la tranche horaire). Coché : elle s'ajoute en plus, en heure supplémentaire.</p>
   </div>
 
   <div class="card">
@@ -294,8 +294,15 @@ function addToReport() {
   const r = computeWorked();
   if (!r) return;
   const label = document.getElementById('label').value || `Journée ${entries.length + 1}`;
-  entries.push({ label, ...r, isTask: false, overtime: true });
+  entries.push({ label, ...r, isTask: false, overtime: true, deductedFrom: null, deductedAmount: 0 });
   renderReport();
+}
+
+function findLastDayEntry() {
+  for (let i = entries.length - 1; i >= 0; i--) {
+    if (!entries[i].isTask) return entries[i];
+  }
+  return null;
 }
 
 function addTaskToReport() {
@@ -305,18 +312,60 @@ function addTaskToReport() {
   if (worked <= 0) return;
   const label = document.getElementById('taskLabel').value || `Tâche ${entries.length + 1}`;
   const overtime = document.getElementById('taskOvertime').checked;
-  entries.push({ label, start: null, end: null, pause: 0, worked, isTask: true, overtime });
+  const task = { label, start: null, end: null, pause: 0, worked, isTask: true, overtime, deductedFrom: null, deductedAmount: 0 };
+
+  if (!overtime) {
+    const dayEntry = findLastDayEntry();
+    if (dayEntry) {
+      const deduction = Math.min(worked, dayEntry.worked);
+      dayEntry.worked -= deduction;
+      task.deductedFrom = dayEntry;
+      task.deductedAmount = deduction;
+    }
+  }
+
+  entries.push(task);
   document.getElementById('taskLabel').value = '';
   document.getElementById('taskOvertime').checked = false;
   renderReport();
 }
 
 function toggleOvertime(i, checked) {
-  entries[i].overtime = checked;
+  const e = entries[i];
+  if (checked) {
+    if (e.deductedFrom) {
+      e.deductedFrom.worked += e.deductedAmount;
+      e.deductedFrom = null;
+      e.deductedAmount = 0;
+    }
+    e.overtime = true;
+  } else {
+    const dayEntry = findLastDayEntry();
+    if (dayEntry) {
+      const deduction = Math.min(e.worked, dayEntry.worked);
+      dayEntry.worked -= deduction;
+      e.deductedFrom = dayEntry;
+      e.deductedAmount = deduction;
+    }
+    e.overtime = false;
+  }
   renderReport();
 }
 
 function removeEntry(i) {
+  const e = entries[i];
+  if (e.isTask && e.deductedFrom) {
+    e.deductedFrom.worked += e.deductedAmount;
+  }
+  if (!e.isTask) {
+    entries.forEach(t => {
+      if (t.deductedFrom === e) {
+        t.overtime = true;
+        t.deductedFrom = null;
+        t.deductedAmount = 0;
+      }
+    });
+  }
   entries.splice(i, 1);
   renderReport();
 }
