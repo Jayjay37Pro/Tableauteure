@@ -14,6 +14,9 @@
     --accent: #2f5d4f;
     --accent-soft: #e4ede9;
     --danger: #a4442f;
+    --col-duree: #eef1e9;
+    --col-coef: #e4ede9;
+    --col-coef-quarter: #ece3d6;
   }
   * { box-sizing: border-box; }
   body {
@@ -94,6 +97,54 @@
   }
   .hint { font-size: 0.8rem; color: var(--ink-soft); margin-top: 0.5rem; }
   .empty { color: var(--ink-soft); font-size: 0.85rem; padding: 0.5rem 0; }
+
+  .col-duree { background: var(--col-duree); }
+  .col-coef { background: var(--col-coef); }
+  .col-coef-quarter { background: var(--col-coef-quarter); }
+
+  th.col-duree, th.col-coef, th.col-coef-quarter {
+    white-space: nowrap;
+  }
+
+  .info {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 4px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid var(--ink-soft);
+    color: var(--ink-soft);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: normal;
+    cursor: help;
+    vertical-align: middle;
+  }
+  .info:hover::after, .info:focus::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 135%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: #fff;
+    padding: 0.5rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
+    line-height: 1.35;
+    white-space: normal;
+    width: 190px;
+    z-index: 20;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  }
+
   @media (max-width: 480px) {
     .field-grid, .pause-row { grid-template-columns: 1fr; }
   }
@@ -113,9 +164,10 @@
       justify-content: space-between;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.4rem 0;
+      padding: 0.4rem 0.5rem;
       border-bottom: 1px solid var(--line);
       text-align: right;
+      border-radius: 5px;
     }
     .responsive-table td:last-child { border-bottom: none; }
     .responsive-table td[data-label]:not([data-label=""])::before {
@@ -129,6 +181,9 @@
     }
     .responsive-table td.empty { display: block; text-align: center; }
     .responsive-table td:empty { display: none; }
+    .responsive-table tfoot td.col-duree,
+    .responsive-table tfoot td.col-coef,
+    .responsive-table tfoot td.col-coef-quarter { background: transparent; }
   }
 </style>
 </head>
@@ -207,13 +262,13 @@
     <h2>Tableau à reporter</h2>
     <table class="responsive-table" id="reportTable">
       <thead>
-        <tr><th>Journée</th><th class="num">Horaires</th><th class="num">Pause</th><th class="num">Durée</th><th class="num">H. sup.</th><th class="num">Coefficient</th><th class="num">Coeff. (1/4h)</th><th></th></tr>
+        <tr><th>Journée</th><th class="num">Horaires</th><th class="num">Pause</th><th class="num col-duree">Durée<span class="info" tabindex="0" data-tooltip="Temps réellement travaillé sur cette ligne, en heures et minutes.">i</span></th><th class="num">H. sup.</th><th class="num col-coef">Coefficient<span class="info" tabindex="0" data-tooltip="Durée convertie en heure décimale précise (minutes ÷ 60), ex: 20 min = 0,33.">i</span></th><th class="num col-coef-quarter">Coeff. (1/4h)<span class="info" tabindex="0" data-tooltip="Même durée arrondie au quart d'heure le plus proche avant conversion, ex: 20 min → 15 min = 0,25.">i</span></th><th></th></tr>
       </thead>
       <tbody id="reportBody">
         <tr><td colspan="8" class="empty">Aucune journée ajoutée pour le moment.</td></tr>
       </tbody>
       <tfoot>
-        <tr><td data-label="">Total</td><td class="num" data-label="Horaires"></td><td class="num" data-label="Pause"></td><td class="num" data-label="Durée" id="reportTotalHours">0h00</td><td data-label="H. sup."></td><td class="num" data-label="Coefficient" id="reportTotalCoef">0,00</td><td class="num" data-label="Coeff. (1/4h)" id="reportTotalCoefQuarter">0,00</td><td></td></tr>
+        <tr><td data-label="">Total</td><td class="num" data-label="Horaires"></td><td class="num" data-label="Pause"></td><td class="num col-duree" data-label="Durée" id="reportTotalHours">0h00</td><td data-label="H. sup."></td><td class="num col-coef" data-label="Coefficient" id="reportTotalCoef">0,00</td><td class="num col-coef-quarter" data-label="Coeff. (1/4h)" id="reportTotalCoefQuarter">0,00</td><td></td></tr>
       </tfoot>
     </table>
     <div class="export">
@@ -397,10 +452,10 @@ function renderReport() {
         <td data-label="Journée">${e.label}</td>
         <td class="num" data-label="Horaires">${horaireText}</td>
         <td class="num" data-label="Pause">${pauseText}</td>
-        <td class="num" data-label="Durée">${fmtHM(e.worked)}</td>
+        <td class="num col-duree" data-label="Durée">${fmtHM(e.worked)}</td>
         <td class="num" data-label="H. sup.">${overtimeCell}</td>
-        <td class="num" data-label="Coefficient">${fmtCoef(e.worked)}</td>
-        <td class="num" data-label="Coeff. (1/4h)">${fmtCoef(quarterRoundMins(e.worked))}</td>
+        <td class="num col-coef" data-label="Coefficient">${fmtCoef(e.worked)}</td>
+        <td class="num col-coef-quarter" data-label="Coeff. (1/4h)">${fmtCoef(quarterRoundMins(e.worked))}</td>
         <td data-label=""><button class="del" onclick="removeEntry(${i})" title="Supprimer">✕</button></td>
       `;
       body.appendChild(tr);
