@@ -31,7 +31,7 @@
   .sub { color: var(--ink-soft); font-size: 0.9rem; margin: 0 0 2rem; }
   .card {
     background: var(--card);
-    border: 1px solid var(--line);
+    border: 2px solid var(--ink-soft);
     border-radius: 10px;
     padding: 1.25rem;
     margin-bottom: 1.5rem;
@@ -78,10 +78,11 @@
     margin-top: 1rem;
   }
   .add-btn:hover { filter: brightness(0.96); }
-  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-  th, td { text-align: left; padding: 0.5rem 0.4rem; border-bottom: 1px solid var(--line); }
-  th { color: var(--ink-soft); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; border: 1.5px solid var(--ink-soft); border-radius: 6px; overflow: hidden; }
+  th, td { text-align: left; padding: 0.5rem 0.4rem; border-bottom: 1.5px solid var(--ink-soft); }
+  th { color: var(--ink-soft); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 2px solid var(--ink); }
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody tr:last-child td { border-bottom: 1.5px solid var(--ink-soft); }
   tfoot td { font-weight: 700; border-bottom: none; border-top: 2px solid var(--ink); }
   .del { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1rem; padding: 0 0.3rem; }
   .export { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
@@ -153,19 +154,19 @@
     .responsive-table, .responsive-table tbody, .responsive-table tfoot,
     .responsive-table tr, .responsive-table td { display: block; width: 100%; }
     .responsive-table tr {
-      border: 1px solid var(--line);
+      border: 1.5px solid var(--ink-soft);
       border-radius: 8px;
       padding: 0.5rem 0.75rem;
       margin-bottom: 0.75rem;
     }
-    .responsive-table tfoot tr { background: var(--accent-soft); border-color: var(--accent); }
+    .responsive-table tfoot tr { background: var(--accent-soft); border-color: var(--accent); border-width: 2px; }
     .responsive-table td {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 0.75rem;
       padding: 0.4rem 0.5rem;
-      border-bottom: 1px solid var(--line);
+      border-bottom: 1.5px solid var(--line);
       text-align: right;
       border-radius: 5px;
     }
